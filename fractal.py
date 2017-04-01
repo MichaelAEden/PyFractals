@@ -28,7 +28,7 @@ class Fractal(object):
         return None
 
     def display(self):
-        fractal = self.generate(1000, 1000, 200, -1, 1, -1, 1)
+        fractal = self.generate(1000, 1000, 200, -2, .5, -1.25, 1.25)
         pylab.imshow(fractal, origin='lower left')
         pylab.show()
 
