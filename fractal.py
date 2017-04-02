@@ -43,8 +43,6 @@ class Fractal(object):
 
     def display(self):
         fractal = self.generate(500, 500, -1, .5, -1.25, 0.75, 100)
-        fractal[fractal==0] = -1
-        fractal[fractal>1] = 1
         pylab.imshow(fractal, origin='lower left')
         pylab.show()
 
@@ -152,7 +150,7 @@ class FractalNewton(Fractal):
 
         # Convert the matrix of complex roots into a matrix which can be represented as an image
         roots = z.real + z.imag
-        img = (100 * roots + 0.35 * root_iters).astype(dtype=int)
+        img = (25 * roots + 1 * root_iters).astype(dtype=int)
 
         # Returns transpose of the image matrix
         return img.T
