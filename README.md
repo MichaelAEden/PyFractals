@@ -10,3 +10,7 @@ Uses numpy and pylab libraries.
 ---
 
 ![Alt text](/sample_pics/MandelbrotSet.png?raw=true "The Mandelbrot Set")
+
+---
+
+![Alt text](/sample_pics/NewtonFractal.png?raw=true "Newton Fractal")

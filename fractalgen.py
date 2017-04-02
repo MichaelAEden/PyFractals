@@ -1,4 +1,4 @@
-from fractal import FractalMandel, FractalJulia
+from fractal import FractalMandel, FractalJulia, FractalNewton
 
 if __name__=='__main__':
-    fractal = FractalMandel().display()
+    fractal = FractalNewton().display()
