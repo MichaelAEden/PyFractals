@@ -1,4 +1,4 @@
-from fractal import FractalMandel, FractalJulia, FractalNewton
+from fractal import FractalMandel, FractalJulia, FractalNewton, FractalPheonix
 import numpy as np
 
 def f_sine(x):
@@ -28,11 +28,15 @@ def dx_polynomial(x):
 if __name__=='__main__':
     np.set_printoptions(threshold=np.nan)
 
-    julia_seed = complex(0, 0.6)
+    julia_seed = complex(0, 0.4)
     mandel_seeds = None
+    pheonix_seeds = dict(c=complex(0.56, 0), P=-0.5)
     newton_seeds = dict(f=f_cosine, dx=dx_cosine, a=1)
 
-    fractal = FractalNewton()
-    fractal.generate_fractal(1000, 1000, -10, 10, -10, 10, 100, newton_seeds)
+    fractal = FractalMandel()
+    # fractal.generate_fractal(2000, 2000, -3, 3, -3, 3, 20, newton_seeds) # THIS IS SO COOL
+    fractal.generate_fractal(2000, 2000, -1.9, 0.6, -1.25, 1.25, 100, mandel_seeds)  # Classic Mandel
+    # fractal.generate_fractal(300, 300, -2.0, 2.0, -2.0, 2.0, 100, julia_seed)     # Get a new picture
+
     fractal.display()
 

@@ -7,7 +7,7 @@ Uses numpy library.
 
 #### Newton Fractal for f(x) = cos(sin(x)) - Pi
 
-![Alt text](/sample_pics/NewtonFractalTrigFunc.png?raw=true "Newton Fractal")
+![Alt text](/sample_pics/NewtonFractalTrigFuncRecolor.png?raw=true "Newton Fractal")
 
 ---
 
@@ -19,7 +19,7 @@ Uses numpy library.
 
 #### The Mandelbrot Set
 
-![Alt text](/sample_pics/MandelbrotSet.png?raw=true "The Mandelbrot Set")
+![Alt text](/sample_pics/MandelbrotSetRecolor.png?raw=true "The Mandelbrot Set")
 
 ---
 
