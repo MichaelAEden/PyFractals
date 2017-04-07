@@ -3,9 +3,13 @@ from abc import abstractmethod, ABCMeta
 import numpy as np
 import numpy.matlib
 import time
-import random
 
+import matplotlib as mpl
+
+from rendertools import ColorUtils
 from PIL import Image
+
+# TODO: add a color tools class
 
 class Fractal(object):
     __metaclass__ = ABCMeta
@@ -26,7 +30,7 @@ class Fractal(object):
     @abstractmethod
     def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seeds):
         """
-        Generates a fractal.
+        Generates a fractal as a numpy array.
         :param n: Pixel resolution in x-axis
         :param m: Pixel resolution in y-axis
         :param itermax: Maximum number of iterations permitted in each calculation
@@ -41,11 +45,15 @@ class Fractal(object):
         return None
 
     def get_image_array(self):
+        """
+        Converts the generated fractal into an RGB image array
+        :return:
+        """
         fractal_map = self.fractal_map
         if fractal_map is None:
             raise Exception("Fractal not generated!")
 
-        color_adjusted_fractal_map = self.adjust_color(fractal_map, (0, 255))
+        color_adjusted_fractal_map = ColorUtils.adjust_color(fractal_map, (0, 255))
         zeroes_map = np.zeros(fractal_map.shape)
 
         # Layers the three arrays into one 3d image
@@ -56,25 +64,6 @@ class Fractal(object):
         img = Image.fromarray(self.get_image_array(), 'RGB')
         img.save('temp.png')
         img.show()
-
-    @staticmethod
-    def adjust_color(image, color_range):
-        """
-        Adjusts color of image so the maximum and minimum values in the array match those in the given color range
-        :param image: Image array
-        :type image: np.ndarray
-        :param color_range: Minimum and maximum color range values
-        :type color_range: tuple
-        :return: Image array adjusted for color
-        """
-
-        color_min = color_range[0]
-        color_range = color_range[1] - color_min
-
-        max_value = np.nanmax(image)
-
-        color_adjusted_image = (image.astype(dtype=float) / max_value * color_range + color_min).astype(dtype=np.uint8)
-        return color_adjusted_image
 
     def get_complex_plane(self, n, m, xmin, xmax, ymin, ymax):
         """Returns a matrix representing the complex plane."""
@@ -94,68 +83,30 @@ class FractalMandel(Fractal):
     def __init__(self):
         Fractal.__init__(self)
         self.name = "Mandelbrot Set"
-
-    @staticmethod
-    def get_weighted_colors(color_1, color_2, color_weight_array):
-        if np.nanmax(color_weight_array) > 1.0:
-            raise Exception("Color weight cannot be > 1. Invalid color weight: %s" % (str(np.amax(color_weight_array))))
-
-        return color_weight_array * 1
-        # return (color_weight_array * float(color_1) + (1.0 + (-1 * color_weight_array)) * float(color_2)).astype(dtype=int)
+        self.num_colors = 2
 
     def get_image_array(self):
-        fractal_map = self.fractal_map[0]
-        escape_factors = self.fractal_map[1]
-
-        # print escape_factors
-
-        if fractal_map is None:
+        if self.fractal_map is None:
             raise Exception("Fractal not generated!")
 
-        # Generates a list of random colors
-        color_range = 5     # Number of colors to generate
-        colors = [0x000000] # Set black as default color
-        for i in range(color_range):
-            colors.append(random.randint(1, 0xffffff))
-        # print colors
+        fractal_map = self.fractal_map
+        hsv_img = np.array(
+            [fractal_map * self.num_colors % 1,  # Cycles through the color wheel
+             fractal_map.astype(dtype=bool).astype(dtype=float),  # Sets saturation to either 0 at zero points
+                                                                  # or 1 at any non-zero points
+             1 - fractal_map]).astype(dtype=float).T              # Values become darker
 
-        # Assigns these colors to the fractal based on iterations per pixel
-        color_adjusted_fractal_map = fractal_map % color_range
-        for color in range(len(colors)):
-            # adjust_color_section = color_adjusted_fractal_map[]
-            fractal_map[color_adjusted_fractal_map==color] = colors[color]
-
-            # new_colors = escape_factors
-            # new_colors = self.get_weighted_colors(colors[color], colors[(color + 1) % len(colors)], escape_factors)
-
-            # print "MAXIMUM: " + str(np.amax(new_colors) / (256 ** 3))
-
-        # TODO: understand bitwise operators
-        # Converts the color map into three RGB maps which are then layered on top of each other
-        # There may be a much simpler way to do this
-        r_map = fractal_map & 255
-        g_map = (fractal_map >> 8) & 255
-        b_map = (fractal_map >> 16) & 255
-
-        # print r_map
-        # print g_map
-        # print b_map
-
-        # Layers the three arrays into one 3d image
-        data = np.array([r_map, g_map, b_map]).astype(dtype=np.uint8)
-
-        print data.shape
-
-        return data.T
+        rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
+        return rgb_img
 
     def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seed):
+        self.num_colors = seed['num_colors']
         c = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
         z = np.copy(c)
 
         # Generates a matrix with the same dimensions of c which will represent our image
-        img = np.matlib.zeros(c.shape, dtype=int)
+        smooth_img = np.matlib.zeros(c.shape, dtype=float)
         escaped = np.matlib.zeros(c.shape, dtype=bool)
-        escape_factor = np.matlib.zeros(c.shape, dtype=float)
 
         for i in xrange(itermax):  # Like range, except it creates values to iterate through as needed rather than list
 
@@ -163,18 +114,23 @@ class FractalMandel(Fractal):
             z = np.square(z)
             z += c
 
-            # Track which values have escaped and keep track of these iterations in the final image
+            # In the image, use the current iteration minus some calculated value to get the final smoothed colour
             temp_escaped = (abs(z) > 2.0)
-
-            # For color smoothing, we keep track of how fast these escaped values
-            tracking_points = np.invert(escaped) & temp_escaped
-            escape_factor[tracking_points] = np.log(np.absolute(z[tracking_points])) / 2.0
-
+            np.copyto(
+                smooth_img,
+                (i + 1 - np.log(np.log(np.absolute(z))) / np.log(2)),
+                casting='no',
+                where=np.invert(escaped) & temp_escaped
+            )
             escaped = temp_escaped
-            img[escaped] = i + 1
+
+        # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
+        smooth_img /= itermax
+        smooth_img[smooth_img>1] = 1
+        smooth_img[smooth_img<0] = 0
 
         # Returns the image matrix
-        return [img, escape_factor]
+        return smooth_img
 
 
 class FractalPheonix(Fractal):
@@ -212,24 +168,45 @@ class FractalJulia(Fractal):
         Fractal.__init__(self)
         self.name = "Julia Set"
 
+    def get_image_array(self):
+        if self.fractal_map is None:
+            raise Exception("Fractal not generated!")
+
+        fractal_map = self.fractal_map
+        hsv_img = np.array(
+            [(fractal_map + 0.05) * self.num_colors % 1,
+             fractal_map,
+             np.ones(fractal_map.shape)]).astype(dtype=float).T
+
+        rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
+        return rgb_img
+
     def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seed):
-        c = seed
+        self.num_colors = seed['num_colors']
+        c = seed['c']
         z = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
 
         # Generates a fresh matrix with the same dimensions of c which will represent our image
-        img = np.matlib.zeros(z.shape, dtype=int)
+        smooth_img = np.matlib.zeros(z.shape, dtype=float)
 
         for i in xrange(itermax):
             z = np.square(z) + c
 
-            # If a value exceeds 2.0, it is bound to approach infinity, so get a matrix of unbounded points
-            unbounded = abs(z) > 2.0
-
             # Get all values which are unbounded, and write to them the number of iterations before they became unbounded
-            img[unbounded] = i + 1
+            np.copyto(
+                smooth_img,
+                smooth_img + np.exp(-np.absolute(z)),
+                casting='no',
+                where=np.invert(np.isnan(z))
+            )
+
+        # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
+        smooth_img /= itermax
+        smooth_img[smooth_img>1] = 1
+        smooth_img[smooth_img<0] = 0
 
         # Returns the image matrix
-        return img
+        return smooth_img
 
 
 class FractalNewton(Fractal):
@@ -271,12 +248,13 @@ class FractalNewton(Fractal):
         if fractal_map is None:
             raise Exception("Fractal not generated!")
 
-        color_adjusted_real_map = self.adjust_color(fractal_map[0], (0, 127))
-        color_adjusted_imag_map = self.adjust_color(fractal_map[1], (0, 127))
-        color_adjusted_iter_map = self.adjust_color(fractal_map[2], (0, 128))
+        color_adjusted_real_map = ColorUtils.adjust_color(fractal_map[0], (0, 64))
+        color_adjusted_imag_map = ColorUtils.adjust_color(fractal_map[1], (64, 96))
+        color_adjusted_iter_map = ColorUtils.adjust_color(fractal_map[2], (64, 128))
 
         # Layers the three arrays into one 3d image
-        data = np.array([color_adjusted_real_map + color_adjusted_iter_map,
-                         color_adjusted_imag_map + color_adjusted_iter_map,
+        data = np.array([color_adjusted_real_map,
+                         color_adjusted_imag_map,
                          color_adjusted_iter_map]).astype(dtype=np.uint8)
+
         return data.T

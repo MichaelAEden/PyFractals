@@ -28,15 +28,16 @@ def dx_polynomial(x):
 if __name__=='__main__':
     np.set_printoptions(threshold=np.nan)
 
-    julia_seed = complex(0, 0.4)
-    mandel_seeds = None
+    julia_seed = dict(num_colors=5, c=complex(0.25, -0.54))
+    mandel_seeds = dict(num_colors=5)
     pheonix_seeds = dict(c=complex(0.56, 0), P=-0.5)
-    newton_seeds = dict(f=f_cosine, dx=dx_cosine, a=1)
+    newton_seeds = dict(f=f_polynomial, dx=dx_polynomial, a=1)
 
-    fractal = FractalMandel()
+    fractal = FractalNewton()
     # fractal.generate_fractal(2000, 2000, -3, 3, -3, 3, 20, newton_seeds) # THIS IS SO COOL
-    fractal.generate_fractal(2000, 2000, -1.9, 0.6, -1.25, 1.25, 100, mandel_seeds)  # Classic Mandel
-    # fractal.generate_fractal(300, 300, -2.0, 2.0, -2.0, 2.0, 100, julia_seed)     # Get a new picture
+    # fractal.generate_fractal(100, 100, -2.0, 0.5, -1.25, 1.25, 100, julia_seed)  # Classic Mandel
+    # fractal.generate_fractal(2000, 2000, -2.0, 2.0, -2.0, 2.0, 50, julia_seed)     # Julia set
+    fractal.generate_fractal(500, 500, -2.0, 2.0, -2.0, 2.0, 50, newton_seeds)     # Julia set
 
     fractal.display()
 

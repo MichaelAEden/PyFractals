@@ -5,6 +5,12 @@ Uses numpy library.
 
 ## See it in Action!
 
+##### Featured - A Recolored Mandelbrot Set
+
+![Alt text](/sample_pics/Featured.png?raw=true "Featured")
+
+---
+
 #### Newton Fractal for f(x) = cos(sin(x)) - Pi
 
 ![Alt text](/sample_pics/NewtonFractalTrigFuncRecolor.png?raw=true "Newton Fractal")
