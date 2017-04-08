@@ -5,11 +5,8 @@ import numpy.matlib
 import time
 
 import matplotlib as mpl
+import rendercolor
 
-from rendertools import ColorUtils
-from PIL import Image
-
-# TODO: add a color tools class
 
 class Fractal(object):
     __metaclass__ = ABCMeta
@@ -18,17 +15,20 @@ class Fractal(object):
         self.name = None
         self.fractal_map = None
 
-    def generate_fractal(self, n, m, xmin, xmax, ymin, ymax, itermax, seeds):
+    def get_fractal_image(self, n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs):
         start = time.clock()
-        self.fractal_map = self.generate(n, m, xmin, xmax, ymin, ymax, itermax, seeds)
+        fractal_map = self.generate_fractal(n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs)
         stop = time.clock()
 
         elapsed_time = stop - start
-
         print "Time elapsed: " + str(elapsed_time)
 
+        rgb_image = self.fractal_to_rgb_image(fractal_map)
+
+        return rgb_image
+
     @abstractmethod
-    def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seeds):
+    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs):
         """
         Generates a fractal as a numpy array.
         :param n: Pixel resolution in x-axis
@@ -44,28 +44,20 @@ class Fractal(object):
         """
         return None
 
-    def get_image_array(self):
+    def fractal_to_rgb_image(self, fractal_map):
         """
         Converts the generated fractal into an RGB image array
-        :return:
+        :return: ndarry of shape (n, m, 3)
         """
-        fractal_map = self.fractal_map
-        if fractal_map is None:
-            raise Exception("Fractal not generated!")
-
-        color_adjusted_fractal_map = ColorUtils.adjust_color(fractal_map, (0, 255))
+        color_adjusted_fractal_map = rendercolor.adjust_color(fractal_map, (0, 255))
         zeroes_map = np.zeros(fractal_map.shape)
 
         # Layers the three arrays into one 3d image
         data = np.array([color_adjusted_fractal_map, zeroes_map, zeroes_map]).astype(dtype=np.uint8)
         return data.T
 
-    def display(self):
-        img = Image.fromarray(self.get_image_array(), 'RGB')
-        img.save('temp.png')
-        img.show()
-
-    def get_complex_plane(self, n, m, xmin, xmax, ymin, ymax):
+    @staticmethod
+    def get_complex_plane(n, m, xmin, xmax, ymin, ymax):
         """Returns a matrix representing the complex plane."""
 
         # Creates two matrices of size n x m
@@ -79,28 +71,27 @@ class Fractal(object):
 
         return c
 
+
 class FractalMandel(Fractal):
     def __init__(self):
         Fractal.__init__(self)
         self.name = "Mandelbrot Set"
-        self.num_colors = 2
+        self.num_colors = -1
 
-    def get_image_array(self):
-        if self.fractal_map is None:
-            raise Exception("Fractal not generated!")
-
-        fractal_map = self.fractal_map
+    def fractal_to_rgb_image(self, fractal_map):
         hsv_img = np.array(
             [fractal_map * self.num_colors % 1,  # Cycles through the color wheel
              fractal_map.astype(dtype=bool).astype(dtype=float),  # Sets saturation to either 0 at zero points
-                                                                  # or 1 at any non-zero points
-             1 - fractal_map]).astype(dtype=float).T              # Values become darker
+             # or 1 at any non-zero points
+             1 - fractal_map]).astype(dtype=float).T  # Values become darker
 
         rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
         return rgb_img
 
-    def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seed):
-        self.num_colors = seed['num_colors']
+    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, num_colors, p):
+        self.num_colors = num_colors
+
+        p = p
         c = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
         z = np.copy(c)
 
@@ -110,8 +101,12 @@ class FractalMandel(Fractal):
 
         for i in xrange(itermax):  # Like range, except it creates values to iterate through as needed rather than list
 
-            # Mandelbrot function is: f(z) = z^2 + c
-            z = np.square(z)
+            # Mandelbrot function is: f(z) = z^2 + c, but we can also sub 2 for other values
+            if p == 2.0:
+                z = np.square(z)  # Runs much faster than np.power(z, 2), so we have a special case
+            else:
+                z = np.power(z, p)
+
             z += c
 
             # In the image, use the current iteration minus some calculated value to get the final smoothed colour
@@ -126,8 +121,8 @@ class FractalMandel(Fractal):
 
         # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
         smooth_img /= itermax
-        smooth_img[smooth_img>1] = 1
-        smooth_img[smooth_img<0] = 0
+        smooth_img[smooth_img > 1] = 1
+        smooth_img[smooth_img < 0] = 0
 
         # Returns the image matrix
         return smooth_img
@@ -138,7 +133,7 @@ class FractalPheonix(Fractal):
         Fractal.__init__(self)
         self.name = "Pheonix Fractal"
 
-    def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seed):
+    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seed):
         p = seed['P']
         c = seed['c']
         z1 = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
@@ -168,10 +163,7 @@ class FractalJulia(Fractal):
         Fractal.__init__(self)
         self.name = "Julia Set"
 
-    def get_image_array(self):
-        if self.fractal_map is None:
-            raise Exception("Fractal not generated!")
-
+    def fractal_to_rgb_image(self, fractal_map):
         fractal_map = self.fractal_map
         hsv_img = np.array(
             [(fractal_map + 0.05) * self.num_colors % 1,
@@ -181,7 +173,7 @@ class FractalJulia(Fractal):
         rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
         return rgb_img
 
-    def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seed):
+    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seed):
         self.num_colors = seed['num_colors']
         c = seed['c']
         z = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
@@ -202,14 +194,42 @@ class FractalJulia(Fractal):
 
         # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
         smooth_img /= itermax
-        smooth_img[smooth_img>1] = 1
-        smooth_img[smooth_img<0] = 0
+        smooth_img[smooth_img > 1] = 1
+        smooth_img[smooth_img < 0] = 0
 
         # Returns the image matrix
         return smooth_img
 
 
 class FractalNewton(Fractal):
+    @staticmethod
+    def f_sin(x):
+        return np.sin(x)
+
+    @staticmethod
+    def dx_sin(x):
+        return np.cos(x)
+
+    @staticmethod
+    def f_trig_composite(x):
+        return np.cos(np.sin(x)) - np.pi
+
+    @staticmethod
+    def dx_trig_composite(x):
+        return -1 * np.cos(x) * np.sin(np.sin(x))
+
+    @staticmethod
+    def f_polynomial(x):
+        return np.power(x, 3) + 1
+
+    @staticmethod
+    def dx_polynomial(x):
+        return 3 * np.power(x, 2)
+
+    FUNCTION_SEED_SIN = (f_sin, dx_sin)
+    FUNCTION_SEED_TRIG = (f_sin, dx_sin)
+    FUNCTION_SEED_POLYNOMIAL = (f_polynomial, dx_polynomial)
+
     def __init__(self):
         Fractal.__init__(self)
         self.name = "Newton fractal"
@@ -219,7 +239,7 @@ class FractalNewton(Fractal):
         """Approximates the root of the inputted function using one iteration of Newton's method"""
         return x - a * (f(x) / dx(x))
 
-    def generate(self, n, m, xmin, xmax, ymin, ymax, itermax, seeds):
+    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seeds):
         f = seeds['f']
         dx = seeds['dx']
         a = seeds['a']
@@ -243,14 +263,10 @@ class FractalNewton(Fractal):
         # Returns the image matrix
         return [solutions.real, solutions.imag, root_iters]
 
-    def get_image_array(self):
-        fractal_map = self.fractal_map
-        if fractal_map is None:
-            raise Exception("Fractal not generated!")
-
-        color_adjusted_real_map = ColorUtils.adjust_color(fractal_map[0], (0, 64))
-        color_adjusted_imag_map = ColorUtils.adjust_color(fractal_map[1], (64, 96))
-        color_adjusted_iter_map = ColorUtils.adjust_color(fractal_map[2], (64, 128))
+    def fractal_to_rgb_image(self, fractal_map):
+        color_adjusted_real_map = rendercolor.adjust_color(fractal_map[0], (0, 64))
+        color_adjusted_imag_map = rendercolor.adjust_color(fractal_map[1], (64, 96))
+        color_adjusted_iter_map = rendercolor.adjust_color(fractal_map[2], (64, 128))
 
         # Layers the three arrays into one 3d image
         data = np.array([color_adjusted_real_map,
