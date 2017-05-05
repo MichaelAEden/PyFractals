@@ -8,14 +8,14 @@ Uses numpy library.
 ##### Featured - The Mandelbrot Set Animated
 ###### Shows how the set changes when using a different exponent
 
-![Alt text](/sample_pics/Featured.mp4?raw=true "Featured")
+![Alt text](/sample_pics/Featured.gif?raw=true "Featured")
 
 ---
 
 ##### The Julia Set Animated
 ###### Animates changes to the seed value *c*
 
-![Alt text](/sample_pics/Julia.mp4?raw=true "Featured")
+![Alt text](/sample_pics/Julia.gif?raw=true "Featured")
 
 ---
 

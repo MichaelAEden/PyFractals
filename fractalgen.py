@@ -14,7 +14,7 @@ VIDEO_FILE_NAME = "anim/videos/video"
 def run():
     init()
 
-    # fractal = FractalMandel(800, 800, 50, -1.3, 1.3, -1.3, 1.3)
+    # fractal = FractalJulia(800, 800, 50, -1.3, 1.3, -1.3, 1.3)
     fractal = FractalMandel(800, 800, 50, -2.0, 0.5, -1.25, 1.25)
 
     # renderanimation.animate_fractal_values(fractal, FRAMES_FILE_NAME,
