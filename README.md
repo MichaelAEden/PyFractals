@@ -5,30 +5,35 @@ Uses numpy library.
 
 ## See it in Action!
 
-##### Featured - A Recolored Mandelbrot Set
+##### Featured - The Mandelbrot Set Animated
+###### Shows how the set changes when using a different exponent
 
-![Alt text](/sample_pics/Featured.png?raw=true "Featured")
+![Alt text](/sample_pics/Featured.mp4?raw=true "Featured")
 
 ---
 
-#### Newton Fractal for f(x) = cos(sin(x)) - Pi
+##### The Julia Set Animated
+###### Animates changes to the seed value *c*
 
-![Alt text](/sample_pics/NewtonFractalTrigFuncRecolor.png?raw=true "Newton Fractal")
+![Alt text](/sample_pics/Julia.mp4?raw=true "Featured")
+
+---
+
+#### Newton Fractal
+###### Using as input the function *f(x) = cos(sin(x)) - Pi*
+
+![Alt text](/sample_pics/NewtonTrigFunc.png?raw=true "Newton Fractal")
+
+---
+
+##### The Classic Mandelbrot Set
+
+![Alt text](/sample_pics/MandelbrotRecolor1.png?raw=true "Mandelbrot")
 
 ---
 
 #### The Julia Set
 
-![Alt text](/sample_pics/JuliaSet.png?raw=true "The Julia Set")
+![Alt text](/sample_pics/Julia.png?raw=true "The Julia Set")
 
 ---
-
-#### The Mandelbrot Set
-
-![Alt text](/sample_pics/MandelbrotSetRecolor.png?raw=true "The Mandelbrot Set")
-
----
-
-#### Newton Fractal for 3rd Degree Polynomial
-
-![Alt text](/sample_pics/NewtonFractal.png?raw=true "Newton Fractal")

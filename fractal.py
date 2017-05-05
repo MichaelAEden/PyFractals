@@ -11,26 +11,16 @@ import rendercolor
 class Fractal(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self):
-        self.name = None
-        self.fractal_map = None
+    DEFAULT_RES_X = 500
+    DEFAULT_RES_Y = 500
 
-    def get_fractal_image(self, n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs):
-        start = time.clock()
-        fractal_map = self.generate_fractal(n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs)
-        stop = time.clock()
+    DEFAULT_ITER_MAX = 100
 
-        elapsed_time = stop - start
-        print "Time elapsed: " + str(elapsed_time)
+    def __init__(self, n=DEFAULT_RES_X, m=DEFAULT_RES_Y, itermax=DEFAULT_ITER_MAX,
+                 xmin=-1.0, xmax=1.0, ymin=-1.0, ymax=1.0, **seeds):
 
-        rgb_image = self.fractal_to_rgb_image(fractal_map)
-
-        return rgb_image
-
-    @abstractmethod
-    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, *args, **kwargs):
         """
-        Generates a fractal as a numpy array.
+        Initializes the fractal, but does not generate it.
         :param n: Pixel resolution in x-axis
         :param m: Pixel resolution in y-axis
         :param itermax: Maximum number of iterations permitted in each calculation
@@ -42,6 +32,34 @@ class Fractal(object):
         :return: Image representation of the fractal
         :rtype: numpy.lib.twodim_base
         """
+
+        self.name = None
+        self.fractal_map = None
+
+        self.n = n
+        self.m = m
+        self.itermax = itermax
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+
+        self.seeds = seeds
+
+    def get_fractal_image(self):
+        start = time.clock()
+        fractal_map = self.generate_fractal()
+        stop = time.clock()
+
+        elapsed_time = stop - start
+        print "Time elapsed: " + str(elapsed_time)
+
+        rgb_image = self.fractal_to_rgb_image(fractal_map)
+
+        return rgb_image
+
+    @abstractmethod
+    def generate_fractal(self):
         return None
 
     def fractal_to_rgb_image(self, fractal_map):
@@ -55,6 +73,18 @@ class Fractal(object):
         # Layers the three arrays into one 3d image
         data = np.array([color_adjusted_fractal_map, zeroes_map, zeroes_map]).astype(dtype=np.uint8)
         return data.T
+
+    """ Getters and Setters - BEGIN """
+
+    def set_view_frame(self, xmin, xmax, ymin, ymax):
+        """Sets the the viewing frame of the fractal."""
+        self.xmin, self.xmax = xmin, xmax
+        self.ymin, self.ymax = ymin, ymax
+
+    def set_seeds(self, **seeds):
+        """Updates fractal seed values."""
+        for key, value in seeds.iteritems():
+            self.seeds[key] = seeds[key]
 
     @staticmethod
     def get_complex_plane(n, m, xmin, xmax, ymin, ymax):
@@ -73,14 +103,23 @@ class Fractal(object):
 
 
 class FractalMandel(Fractal):
-    def __init__(self):
-        Fractal.__init__(self)
+
+    DEFAULT_POWER = 2
+    DEFAULT_NUM_COLORS = 5
+
+    def __init__(self, *args, **kwargs):
+        Fractal.__init__(self, *args, **kwargs)
         self.name = "Mandelbrot Set"
-        self.num_colors = -1
 
     def fractal_to_rgb_image(self, fractal_map):
+
+        # Initializes image seed values
+        num_colors = self.DEFAULT_NUM_COLORS
+        if 'num_colors' in self.seeds:
+            num_colors = self.seeds['num_colors']
+
         hsv_img = np.array(
-            [fractal_map * self.num_colors % 1,  # Cycles through the color wheel
+            [fractal_map * num_colors % 1,  # Cycles through the color wheel
              fractal_map.astype(dtype=bool).astype(dtype=float),  # Sets saturation to either 0 at zero points
              # or 1 at any non-zero points
              1 - fractal_map]).astype(dtype=float).T  # Values become darker
@@ -88,18 +127,21 @@ class FractalMandel(Fractal):
         rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
         return rgb_img
 
-    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, num_colors, p):
-        self.num_colors = num_colors
+    def generate_fractal(self):
 
-        p = p
-        c = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
+        # Initializes seed values
+        p = self.DEFAULT_POWER
+        if 'p' in self.seeds:
+            p = self.seeds['p']
+
+        c = self.get_complex_plane(self.n, self.m, self.xmin, self.xmax, self.ymin, self.ymax)
         z = np.copy(c)
 
         # Generates a matrix with the same dimensions of c which will represent our image
         smooth_img = np.matlib.zeros(c.shape, dtype=float)
         escaped = np.matlib.zeros(c.shape, dtype=bool)
 
-        for i in xrange(itermax):  # Like range, except it creates values to iterate through as needed rather than list
+        for i in xrange(self.itermax):
 
             # Mandelbrot function is: f(z) = z^2 + c, but we can also sub 2 for other values
             if p == 2.0:
@@ -120,7 +162,7 @@ class FractalMandel(Fractal):
             escaped = temp_escaped
 
         # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
-        smooth_img /= itermax
+        smooth_img /= self.itermax
         smooth_img[smooth_img > 1] = 1
         smooth_img[smooth_img < 0] = 0
 
@@ -129,20 +171,28 @@ class FractalMandel(Fractal):
 
 
 class FractalPheonix(Fractal):
-    def __init__(self):
-        Fractal.__init__(self)
+
+    DEFAULT_SEEDS = dict(P=2.0, c=1.0)
+
+    def __init__(self, *args, **kwargs):
+        Fractal.__init__(self, *args, **kwargs)
         self.name = "Pheonix Fractal"
 
-    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seed):
-        p = seed['P']
-        c = seed['c']
-        z1 = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
+    def generate_fractal(self):
+        p, c = self.DEFAULT_SEEDS['P'], self.DEFAULT_SEEDS['c']
+
+        if 'P' in self.seeds:
+            p = self.seeds['P']
+        if 'c' in self.seeds:
+            c = self.seeds['c']
+
+        z1 = self.get_complex_plane(self.n, self.m, self.xmin, self.xmax, self.ymin, self.ymax)
         z0 = np.zeros(z1.shape)
 
         # Generates a matrix with the same dimensions of c which will represent our image
         img = np.matlib.zeros(z1.shape, dtype=int)
 
-        for i in xrange(itermax):  # Like range, except it creates values to iterate through as needed rather than list
+        for i in xrange(self.itermax):  # Like range, except it creates values to iterate through as needed rather than list
 
             temp = z1
 
@@ -159,29 +209,43 @@ class FractalPheonix(Fractal):
 
 
 class FractalJulia(Fractal):
-    def __init__(self):
-        Fractal.__init__(self)
+
+    DEFAULT_POWER = 2
+    DEFAULT_C = 1.0
+    DEFAULT_NUM_COLORS = 5
+
+    def __init__(self, *args, **kwargs):
+        Fractal.__init__(self, *args, **kwargs)
         self.name = "Julia Set"
 
     def fractal_to_rgb_image(self, fractal_map):
-        fractal_map = self.fractal_map
+
+        # Initializes image seed values
+        num_colors = self.DEFAULT_NUM_COLORS
+        if 'num_colors' in self.seeds:
+            num_colors = self.seeds['num_colors']
+
         hsv_img = np.array(
-            [(fractal_map + 0.05) * self.num_colors % 1,
+            [(fractal_map + 0.05) * num_colors % 1,
              fractal_map,
              np.ones(fractal_map.shape)]).astype(dtype=float).T
 
         rgb_img = (mpl.colors.hsv_to_rgb(hsv_img) * 255).astype(dtype=np.uint8)
         return rgb_img
 
-    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seed):
-        self.num_colors = seed['num_colors']
-        c = seed['c']
-        z = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
+    def generate_fractal(self):
+
+        # Initializes seed values
+        c = self.DEFAULT_C
+        if 'c' in self.seeds:
+            c = self.seeds['c']
+
+        z = self.get_complex_plane(self.n, self.m, self.xmin, self.xmax, self.ymin, self.ymax)
 
         # Generates a fresh matrix with the same dimensions of c which will represent our image
         smooth_img = np.matlib.zeros(z.shape, dtype=float)
 
-        for i in xrange(itermax):
+        for i in xrange(self.itermax):
             z = np.square(z) + c
 
             # Get all values which are unbounded, and write to them the number of iterations before they became unbounded
@@ -193,7 +257,7 @@ class FractalJulia(Fractal):
             )
 
         # Smooth colours are ranged (0, itermax), so we must put them in range (0, 1)
-        smooth_img /= itermax
+        smooth_img /= self.itermax
         smooth_img[smooth_img > 1] = 1
         smooth_img[smooth_img < 0] = 0
 
@@ -230,20 +294,30 @@ class FractalNewton(Fractal):
     FUNCTION_SEED_TRIG = (f_sin, dx_sin)
     FUNCTION_SEED_POLYNOMIAL = (f_polynomial, dx_polynomial)
 
+    DEFAULT_A = 1.0
+
     def __init__(self):
         Fractal.__init__(self)
         self.name = "Newton fractal"
 
     @staticmethod
-    def newtons_iter(f, dx, x, a=1):
+    def newtons_iter(f, dx, x, a):
         """Approximates the root of the inputted function using one iteration of Newton's method"""
         return x - a * (f(x) / dx(x))
 
-    def generate_fractal(self, n, m, itermax, xmin, xmax, ymin, ymax, seeds):
-        f = seeds['f']
-        dx = seeds['dx']
-        a = seeds['a']
-        z = self.get_complex_plane(n, m, xmin, xmax, ymin, ymax)
+    def generate_fractal(self):
+
+        a = self.DEFAULT_A
+        if 'a' in self.seeds:
+            a = self.seeds['a']
+
+        try:
+            f = self.seeds['f']
+            dx = self.seeds['dx']
+        except KeyError:
+            raise Exception("Newton's Fractal requires a function and its derivative as input.")
+
+        z = self.get_complex_plane(self.n, self.m, self.xmin, self.xmax, self.ymin, self.ymax)
 
         # Tracks the number of iterations required to reach a solution
         root_iters = np.matlib.zeros(z.shape)
@@ -251,7 +325,7 @@ class FractalNewton(Fractal):
         # When an approximation comes within this of the root, mark the approximation as a solution
         e = 0.00000001
 
-        for i in xrange(itermax):
+        for i in xrange(self.itermax):
             z = self.newtons_iter(f, dx, z, a)
 
             # Increment the points in the roots_iters matrix where solutions have been found
