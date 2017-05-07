@@ -10,6 +10,7 @@ import numpy as np
 FRAMES_FILE_NAME = "anim/frames/frame_"
 VIDEO_FILE_NAME = "anim/videos/video"
 
+# TODO: reduce gif filesize
 
 def run():
     init()
