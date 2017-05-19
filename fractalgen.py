@@ -3,6 +3,7 @@ import math
 
 from fractal import FractalMandel
 from fractal import FractalJulia
+from fractal import FractalNewton
 import renderanimation
 
 import numpy as np
@@ -16,7 +17,10 @@ def run():
     init()
 
     # fractal = FractalJulia(800, 800, 50, -1.3, 1.3, -1.3, 1.3)
-    fractal = FractalMandel(800, 800, 50, -2.0, 0.5, -1.25, 1.25)
+    # fractal = FractalMandel(800, 800, 50, -2.0, 0.5, -1.25, 1.25)
+    fractal = FractalNewton(800, 800, 50, -3.0, 3.0, -3.0, 3.0,
+                            f=None,
+                            dx=None)
 
     # renderanimation.animate_fractal_values(fractal, FRAMES_FILE_NAME,
     #                                        lambda x: dict(c=complex(real=0.14 * (math.log(x + 0.001) + 3),
@@ -25,8 +29,9 @@ def run():
     #                                        lambda x: dict(p=-3 * math.pow(x - 1, 2) + 2),
     #                                        step=0.05)
     renderanimation.animate_fractal_values(fractal, FRAMES_FILE_NAME,
-                                           lambda x: dict(p=-3.6 * math.pow(x - 1, 2) + 2 if x > 0.25 else 4 * x - 1),
-                                           step=0.01)
+                                           lambda x: dict(f=(lambda y: np.sin(np.cos(y)) - 7 * x),
+                                                          dx=(lambda y: -1 * np.sin(y) * np.cos(np.cos(y)))),
+                                           step=1.00)
 
     renderanimation.convert_pngs_to_video(FRAMES_FILE_NAME, VIDEO_FILE_NAME)
 

@@ -296,8 +296,8 @@ class FractalNewton(Fractal):
 
     DEFAULT_A = 1.0
 
-    def __init__(self):
-        Fractal.__init__(self)
+    def __init__(self, *args, **kwargs):
+        Fractal.__init__(self, *args, **kwargs)
         self.name = "Newton fractal"
 
     @staticmethod
@@ -338,13 +338,13 @@ class FractalNewton(Fractal):
         return [solutions.real, solutions.imag, root_iters]
 
     def fractal_to_rgb_image(self, fractal_map):
-        color_adjusted_real_map = rendercolor.adjust_color(fractal_map[0], (0, 64))
-        color_adjusted_imag_map = rendercolor.adjust_color(fractal_map[1], (64, 96))
-        color_adjusted_iter_map = rendercolor.adjust_color(fractal_map[2], (64, 128))
+        color_adjusted_real_map = rendercolor.adjust_color(fractal_map[0], (0, 127))
+        color_adjusted_imag_map = rendercolor.adjust_color(fractal_map[1], (0, 127))
+        color_adjusted_iter_map = rendercolor.adjust_color(fractal_map[2], (0, 128))
 
         # Layers the three arrays into one 3d image
-        data = np.array([color_adjusted_real_map,
-                         color_adjusted_imag_map,
+        data = np.array([color_adjusted_real_map + color_adjusted_iter_map,
+                         color_adjusted_imag_map + color_adjusted_iter_map,
                          color_adjusted_iter_map]).astype(dtype=np.uint8)
 
         return data.T
