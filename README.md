@@ -8,32 +8,32 @@ Uses numpy library.
 ##### Featured - The Mandelbrot Set Animated
 ###### Shows how the set changes when using a different exponent
 
-![Alt text](/sample_pics/Featured.gif?raw=true "Featured")
+![Alt text](/images/Featured.gif?raw=true "Featured")
 
 ---
 
 ##### The Julia Set Animated
 ###### Animates changes to the seed value *c*
 
-![Alt text](/sample_pics/Julia.gif?raw=true "Featured")
+![Alt text](/images/Julia.gif?raw=true "Featured")
 
 ---
 
 #### Newton Fractal
 ###### Using as input the function *f(x) = cos(sin(x)) - Pi*
 
-![Alt text](/sample_pics/NewtonTrigFunc.png?raw=true "Newton Fractal")
+![Alt text](/images/NewtonTrigFunc.png?raw=true "Newton Fractal")
 
 ---
 
 ##### The Classic Mandelbrot Set
 
-![Alt text](/sample_pics/MandelbrotRecolor1.png?raw=true "Mandelbrot")
+![Alt text](/images/MandelbrotRecolor1.png?raw=true "Mandelbrot")
 
 ---
 
 #### The Julia Set
 
-![Alt text](/sample_pics/Julia.png?raw=true "The Julia Set")
+![Alt text](/images/Julia.png?raw=true "The Julia Set")
 
 ---

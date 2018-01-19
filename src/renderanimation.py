@@ -13,7 +13,6 @@ def animate_fractal_zoom(fractal, filename, start_frame, end_frame, frames):
     :param end_frame: Tuple containing coordinates of the final viewpoint.
     :param frames: Number of frames used in the animation.
     """
-
     zoom_count = 0
     for zoom_count in range(frames + 1):
         # Calculates the boundaries of the current zoom frame

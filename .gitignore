@@ -2,5 +2,6 @@
 *.DS_Store
 /.idea
 fractals_config
+PyFractals
 anim/*
 *.mp4
